@@ -85,11 +85,13 @@ These come from the source archive and are deliberately left alone:
   2026-03-27 event a second time.
 - Roughly 3% of games don't reconcile against the per-player time table. That gap is in
   the source data, not the parser.
-- 29 of 3,507 singles rows show a streak one or two larger than the night's rack total,
-  which is arithmetically impossible. Both numbers come straight from the archive, so
-  the inconsistency is upstream. Left as published rather than silently corrected.
-- 9 rows have no streak recorded at all; those render as a dash, not a zero. A genuine
-  zero (player won nothing) does render as 0.
+- The archive credits a winner to only ~96% of games played (1,014 of 24,389 singles
+  games have no win recorded). Consequently 26 singles and 7 doubles rows print a streak
+  larger than the night's rack total, which is impossible. The streak column is the sound
+  one -- it never exceeds games played in any of 3,507 rows -- so the total is raised to
+  the streak and marked with an asterisk. Nothing else is altered.
+- Rows whose name can't be matched to exactly one entry in the time table show a dash
+  rather than a guessed value. A genuine zero (player won nothing) renders as 0.
 
 ## Being a good neighbour
 

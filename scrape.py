@@ -109,15 +109,21 @@ def is_doubles(ev):
 
 
 def event_rows(ev):
-    """One row per competitor: [streak, racks_won, name, fargo, date, place, games].
+    """One row per competitor: [streak, racks, name, fargo, date, place, games, adjusted].
 
     `streak` is the CW column -- the longest run of racks won back to back that
-    night. `racks_won` is the night's total.
+    night. `racks` is the night's total.
+
+    The archive sometimes prints a streak larger than the night's total, which is
+    impossible: winning N in a row requires at least N wins. In those rows the
+    total is the number that is short (about 4% of games archive-wide never get a
+    winner credited), so it is raised to the streak and flagged.
     """
     lut = collections.defaultdict(list)
     for full, rating in ev["fargo"]:
         lut[full[:15]].append((full, rating))
     stats = {}
+    by_short = collections.defaultdict(list)
     for full, ng, cw in ev["avg"]:
         mm = re.match(r"(.*?)\s*\((\d+)\)$", full)
         if not mm:
@@ -125,7 +131,7 @@ def event_rows(ev):
         nm, rating = mm.group(1).strip(), int(mm.group(2))
         lut[nm[:15]].append((nm, rating))
         stats[(nm, rating)] = (cw, ng)
-        stats.setdefault(nm[:15], (cw, ng))
+        by_short[nm[:15]].append((cw, ng))
 
     def resolve(nm):
         cands = lut.get(nm, [])
@@ -137,11 +143,19 @@ def event_rows(ev):
         return best, (ratings.pop() if len(ratings) == 1 else None)
 
     def look(full, rating, key):
-        # None means "no matching row in the time table" -- unknown, not zero
+        # None means "no reliable row in the time table" -- unknown, not zero.
+        # A short-name key is only trusted when it maps to exactly one player,
+        # otherwise duplicate names silently borrow each other's numbers.
         hit = stats.get((full, rating))
         if hit is None:
-            hit = stats.get(key)
+            cands = by_short.get(key) or by_short.get(full[:15]) or []
+            hit = cands[0] if len(cands) == 1 else None
         return hit if hit else (None, 0)
+
+    def emit(cw, won, full, rating, place, ng):
+        adjusted = 1 if (cw is not None and cw > won) else 0
+        return [cw, max(won, cw) if adjusted else won, full, rating,
+                ev["date"], place, ng, adjusted]
 
     rows = []
     for nm, won in ev["active"]:
@@ -149,14 +163,14 @@ def event_rows(ev):
         full = mm.group(1).strip() if mm else nm
         rating = int(mm.group(2)) if mm else None
         cw, ng = look(full, rating, full[:15])
-        rows.append([cw, won, full, rating, ev["date"], 1, ng])
+        rows.append(emit(cw, won, full, rating, 1, ng))
     n = len(ev["elim"])
     for i, (nm, v) in enumerate(ev["elim"]):
         if not v:
             continue  # blank = duplicate registration that never played
         full, rating = resolve(nm)
         cw, ng = look(full, rating, nm)
-        rows.append([cw, int(v), full, rating, ev["date"], len(ev["active"]) + (n - i), ng])
+        rows.append(emit(cw, int(v), full, rating, len(ev["active"]) + (n - i), ng))
     return rows
 
 

@@ -49,6 +49,7 @@ tr:last-child td{border-bottom:0}
 .racks{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
 .dash{color:var(--dim)}
 .tot{color:var(--fg);opacity:.8}
+.adj{color:var(--accent2);font-weight:700;cursor:help}
 .bar{display:inline-block;height:7px;border-radius:3px;background:var(--bar);vertical-align:middle;margin-left:7px}
 .name{font-weight:500}
 .gold{color:var(--accent2);font-weight:700}
@@ -92,6 +93,7 @@ footer a:hover{text-decoration:underline}
         <th class="num">#</th>
         <th class="num" data-k="0" tabindex="0">In a row</th>
         <th class="num" data-k="1" tabindex="0">Racks</th>
+        <th class="num" data-k="6" tabindex="0">Games</th>
         <th data-k="2" tabindex="0" id="th-name">Player</th>
         <th class="num" data-k="3" tabindex="0">Fargo</th>
         <th data-k="4" tabindex="0">Date</th>
@@ -107,14 +109,15 @@ footer a:hover{text-decoration:underline}
 <footer>
   <p><b>In a row</b> is the longest streak of racks a player won back to back that
      night — the beast-mode number. <b>Racks</b> is their total for the whole night,
-     streak or not. <b>Finish</b> is placing in that event; <span class="gold">1st</span>
-     won it. Races are handicapped on Fargo, so a big number doesn't always mean a
-     deep finish.</p>
+     streak or not. <b>Games</b> is everything they played, won or lost.
+     <b>Finish</b> is placing in that event; <span class="gold">1st</span> won it.
+     Races are handicapped on Fargo, so a big number doesn't always mean a deep finish.</p>
   <p>Data scraped from Martin Colello's
      <a href="https://lightningchip.xyz/results/Archive/" target="_blank" rel="noopener">Lightning Chip archive</a>,
-     which publishes the streak as its "CW" column. Refreshes automatically every
-     weekend. A dash means the archive didn't record a streak for that player.
-     Unofficial fan-made page — the archive is the source of truth.</p>
+     which publishes the streak as its "CW" column. Refreshes automatically every weekend.
+     A dash means the archive didn't record that figure. An asterisk means the archive
+     listed fewer total wins than the streak itself — impossible, so the total was raised
+     to match the streak. Unofficial fan-made page — the archive is the source of truth.</p>
 </footer>
 </div>
 
@@ -169,7 +172,8 @@ function render() {
     const run = r[0] === null ? '<span class="dash">\u2014</span>' : `<span class="racks">${r[0]}</span>`;
     return `<tr><td class="num rk">${i + 1}</td>`
       + `<td class="num">${run}<span class="bar" style="width:${w}px"></span></td>`
-      + `<td class="num tot">${r[1]}</td>`
+      + `<td class="num tot">${r[1]}${r[7] ? '<span class="adj" title="Archive listed fewer wins than the streak; raised to the streak.">*</span>' : ''}</td>`
+      + `<td class="num tot">${r[6] || '\u2014'}</td>`
       + `<td class="name">${esc(r[2])}</td>`
       + `<td class="num">${r[3] === null ? '\u2014' : r[3]}</td>`
       + `<td>${esc(r[4])}</td><td class="num">${fin}</td></tr>`;
