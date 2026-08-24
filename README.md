@@ -98,6 +98,8 @@ These come from the source archive and are deliberately left alone:
 - 24 pages from Jan-Jul 2022 use an older multi-column layout whose fixed-width cells
   parse into garbage ("Bret H Priscilla" / "H ("). They are skipped rather than guessed
   at. They predate the CW column, so they could not contribute a streak regardless.
+- Six pages still have no parseable standings row. Their champion is absent and places
+  start at 2 rather than crowning the last player eliminated.
 - Beware Lyle Wilson's widely-shared 2023 spreadsheet: its "Cons. Wins" column mixes
   real CW values with the plain Won column for nights that predate CW. Mitch Ellerman's
   42 is a rack total from a 45-game night he lost 3 of -- not a 42-rack streak.

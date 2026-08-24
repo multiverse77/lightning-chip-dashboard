@@ -73,7 +73,7 @@ def parse_event(raw, filename):
     d["winner"] = htmllib.unescape(re.sub("<[^>]+>", "", m.group(1))).strip() if m else ""
 
     d["active"] = []
-    seg = re.search(r"Table\s*\n(.*?)<p style=\"color:red\">", raw, re.S)
+    seg = re.search(r"Table[^\n]*\n(.*?)<p style=\"color:red\">", raw, re.S)
     if seg:
         for line in seg.group(1).split("\n"):
             t = re.sub(r"<[^>]+>", "", line).rstrip()
@@ -193,12 +193,15 @@ def event_rows(ev):
         cw, ng = look(full, rating, full[:15])
         rows.append(emit(cw, won, full, rating, 1, ng))
     n = len(ev["elim"])
+    # With no parsed survivor the champion is unknown, so places start at 2 --
+    # crowning the last player eliminated would be wrong.
+    base = len(ev["active"]) or 1
     for i, (nm, v) in enumerate(ev["elim"]):
         if not v:
             continue  # blank = duplicate registration that never played
         full, rating = resolve(nm)
         cw, ng = look(full, rating, nm)
-        rows.append(emit(cw, int(v), full, rating, len(ev["active"]) + (n - i), ng))
+        rows.append(emit(cw, int(v), full, rating, base + (n - i), ng))
     return rows
 
 
