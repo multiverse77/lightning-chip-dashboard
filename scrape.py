@@ -23,6 +23,14 @@ UA = "lightning-chip-dashboard/1.0 (fan-made stats page; contact via github issu
 WORKERS = 4
 ALWAYS_REFRESH = 6  # newest N events are re-fetched in case results were still being entered
 
+# Streaks confirmed directly by the tournament director for nights that predate
+# the archive's CW column. Keyed by (date, player) -> racks won back to back.
+# Mitch Ellerman, 2022-07-22: won 42 of 45 and took the title; Eric Lervold
+# confirms the three losses came before the run, making it 42 straight.
+TD_CONFIRMED = {
+    ("2022-07-22", "Mitch Ellerman"): 42,
+}
+
 MONTHS = {m: i + 1 for i, m in enumerate(
     "January February March April May June July August September October November December".split())}
 
@@ -181,9 +189,12 @@ def event_rows(ev):
         return hit if hit else (None, 0)
 
     def emit(cw, won, full, rating, place, ng):
+        confirmed = TD_CONFIRMED.get((ev["date"], full))
+        if confirmed is not None:
+            cw = confirmed
         adjusted = 1 if (cw is not None and cw > won) else 0
         return [cw, max(won, cw) if adjusted else won, full, rating,
-                ev["date"], place, ng, adjusted]
+                ev["date"], place, ng, adjusted, 1 if confirmed is not None else 0]
 
     rows = []
     for nm, won in ev["active"]:

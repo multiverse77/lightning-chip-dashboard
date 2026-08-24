@@ -102,7 +102,10 @@ These come from the source archive and are deliberately left alone:
   start at 2 rather than crowning the last player eliminated.
 - Beware Lyle Wilson's widely-shared 2023 spreadsheet: its "Cons. Wins" column mixes
   real CW values with the plain Won column for nights that predate CW. Mitch Ellerman's
-  42 is a rack total from a 45-game night he lost 3 of -- not a 42-rack streak.
+  42 is a rack total from a 45-game night he lost 3 of. Tournament director Eric
+  Lervold confirms those three losses came before the run, so the 42 straight is real
+  -- it is recorded in TD_CONFIRMED and rendered with a dagger, not derived from the
+  archive. Any other pre-CW night stays a dash unless someone can confirm it the same way.
 
 ## Being a good neighbour
 

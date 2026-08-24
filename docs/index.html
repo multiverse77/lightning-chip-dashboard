@@ -50,6 +50,7 @@ tr:last-child td{border-bottom:0}
 .dash{color:var(--dim)}
 .tot{color:var(--fg);opacity:.8}
 .adj{color:var(--accent2);font-weight:700;cursor:help}
+.td{color:var(--accent2);font-weight:700;cursor:help}
 .bar{display:inline-block;height:7px;border-radius:3px;background:var(--bar);vertical-align:middle;margin-left:7px}
 .name{font-weight:500}
 .gold{color:var(--accent2);font-weight:700}
@@ -123,8 +124,10 @@ footer a:hover{text-decoration:underline}
      <a href="https://lightningchip.xyz/results/Archive/" target="_blank" rel="noopener">Lightning Chip archive</a>,
      which publishes the streak as its "CW" column. Refreshes automatically every weekend.
      The archive only started recording streaks in late 2022, so earlier nights show a
-     dash rather than a zero — their rack totals are still counted. An asterisk means the
-     archive listed fewer total wins than the streak itself — impossible, so the total was
+     dash rather than a zero — their rack totals are still counted. A dagger (†) marks a
+     streak confirmed by the tournament director for a night that predates the CW column.
+     An asterisk means the archive
+     listed fewer total wins than the streak itself — impossible, so the total was
      raised to match. Unofficial fan-made page — the archive is the source of truth.</p>
   <p class="by">Built and maintained by <b>Sandeep Sharma</b>.
      Spot something wrong? Let me know and I'll fix it.</p>
@@ -179,7 +182,8 @@ function render() {
   tb.innerHTML = view.slice(0, limit).map((r, i) => {
     const w = Math.round((r[0] || 0) / scale * 46);
     const fin = r[5] === 1 ? '<span class="gold">1st</span>' : r[5];
-    const run = r[0] === null ? '<span class="dash">\u2014</span>' : `<span class="racks">${r[0]}</span>`;
+    const run = r[0] === null ? '<span class="dash">\u2014</span>'
+      : `<span class="racks">${r[0]}</span>${r[8] ? '<span class="td" title="Confirmed by the tournament director; predates the archive\u2019s CW column.">\u2020</span>' : ''}`;
     return `<tr><td class="num rk">${i + 1}</td>`
       + `<td class="num">${run}<span class="bar" style="width:${w}px"></span></td>`
       + `<td class="num tot">${r[1]}${r[7] ? '<span class="adj" title="Archive listed fewer wins than the streak; raised to the streak.">*</span>' : ''}</td>`
