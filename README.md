@@ -1,7 +1,7 @@
-# Natalie's Chip Tournament — Rack Leaderboard
+# Natalie's Chip Tournament — Beast Mode Leaderboard
 
-An auto-updating leaderboard of racks won per player per night at Natalie's nine-ball
-chip tournaments, scraped from Martin Colello's
+An auto-updating leaderboard of the longest back-to-back rack runs per player per night
+at Natalie's nine-ball chip tournaments, scraped from Martin Colello's
 [Lightning Chip archive](https://lightningchip.xyz/results/Archive/).
 
 **Live page:** <https://multiverse77.github.io/lightning-chip-dashboard/>
@@ -57,7 +57,11 @@ Each archived page is fixed-width text inside a `<pre>` block. The red section l
 players in **elimination order** as 20-character cells of `name(17) + racks-won`; the
 row above it holds the surviving winner and their rack count.
 
-- **Racks** = games that player won across the whole night.
+- **In a row** = the archive's `CW` column: the longest run of racks won back to
+  back that night. Confirmed by reproducing Lyle Wilson's public "Cons. Wins"
+  table from Skips Friday nights — 18 of 23 rows matched on Fargo, streak *and*
+  games played.
+- **Racks** = games that player won across the whole night, streak or not.
 - **Finish** = placing, reconstructed from elimination order. Verified against the
   "Second place" header on all 69 events that publish one — 69/69 matched.
 - Racks-won never exceeded that player's games played across 3,549 checked rows.
@@ -81,6 +85,11 @@ These come from the source archive and are deliberately left alone:
   2026-03-27 event a second time.
 - Roughly 3% of games don't reconcile against the per-player time table. That gap is in
   the source data, not the parser.
+- 29 of 3,507 singles rows show a streak one or two larger than the night's rack total,
+  which is arithmetically impossible. Both numbers come straight from the archive, so
+  the inconsistency is upstream. Left as published rather than silently corrected.
+- 9 rows have no streak recorded at all; those render as a dash, not a zero. A genuine
+  zero (player won nothing) does render as 0.
 
 ## Being a good neighbour
 

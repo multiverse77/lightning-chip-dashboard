@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Natalie's Chip Tournament — Rack Leaderboard</title>
-<meta name="description" content="All-time racks-won leaderboard for Natalie's nine-ball chip tournaments in Arizona.">
+<title>Natalie's Chip Tournament — Beast Mode Leaderboard</title>
+<meta name="description" content="Longest back-to-back rack runs at Natalie's nine-ball chip tournaments in Arizona.">
 <style>
 :root{
   --bg:#0e1512; --panel:#16201c; --panel2:#1c2823; --line:#2a3a33;
@@ -47,6 +47,8 @@ tr:last-child td{border-bottom:0}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 .rk{color:var(--dim);font-size:12px}
 .racks{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.dash{color:var(--dim)}
+.tot{color:var(--fg);opacity:.8}
 .bar{display:inline-block;height:7px;border-radius:3px;background:var(--bar);vertical-align:middle;margin-left:7px}
 .name{font-weight:500}
 .gold{color:var(--accent2);font-weight:700}
@@ -66,9 +68,10 @@ footer a:hover{text-decoration:underline}
 <body>
 <div class="wrap">
 <header>
-  <h1>Natalie's Chip Tournament — Rack Leaderboard</h1>
-  <p>Every player's racks won in a single night, ranked all-time. Nine-ball chip
-     tournaments at Natalie's, Friday nights, alternating singles and Scotch doubles.</p>
+  <h1>Natalie's Chip Tournament — Beast Mode Leaderboard</h1>
+  <p>Longest run of racks won <b>back to back</b> in one night, ranked all-time.
+     Nine-ball chip tournaments at Natalie's, Friday nights, alternating singles
+     and Scotch doubles.</p>
   <div class="updated" id="updated">Loading…</div>
 </header>
 
@@ -87,11 +90,12 @@ footer a:hover{text-decoration:underline}
     <table>
       <thead><tr>
         <th class="num">#</th>
-        <th class="num" data-k="0" tabindex="0">Racks</th>
-        <th data-k="1" tabindex="0" id="th-name">Player</th>
-        <th class="num" data-k="2" tabindex="0">Fargo</th>
-        <th data-k="3" tabindex="0">Date</th>
-        <th class="num" data-k="4" tabindex="0">Finish</th>
+        <th class="num" data-k="0" tabindex="0">In a row</th>
+        <th class="num" data-k="1" tabindex="0">Racks</th>
+        <th data-k="2" tabindex="0" id="th-name">Player</th>
+        <th class="num" data-k="3" tabindex="0">Fargo</th>
+        <th data-k="4" tabindex="0">Date</th>
+        <th class="num" data-k="5" tabindex="0">Finish</th>
       </tr></thead>
       <tbody id="tb"></tbody>
     </table>
@@ -101,13 +105,16 @@ footer a:hover{text-decoration:underline}
 </div>
 
 <footer>
-  <p>Racks = games won by that player across the whole night. Because races are
-     handicapped on Fargo rating, a big rack count doesn't always mean a deep finish —
-     a strong player often has to win far more games to survive the same number of chips.
-     <b>Finish</b> is placing in that event; <span class="gold">1st</span> won it.</p>
+  <p><b>In a row</b> is the longest streak of racks a player won back to back that
+     night — the beast-mode number. <b>Racks</b> is their total for the whole night,
+     streak or not. <b>Finish</b> is placing in that event; <span class="gold">1st</span>
+     won it. Races are handicapped on Fargo, so a big number doesn't always mean a
+     deep finish.</p>
   <p>Data scraped from Martin Colello's
-     <a href="https://lightningchip.xyz/results/Archive/" target="_blank" rel="noopener">Lightning Chip archive</a>.
-     Refreshes automatically every weekend. Unofficial fan-made page — the archive is the source of truth.</p>
+     <a href="https://lightningchip.xyz/results/Archive/" target="_blank" rel="noopener">Lightning Chip archive</a>,
+     which publishes the streak as its "CW" column. Refreshes automatically every
+     weekend. A dash means the archive didn't record a streak for that player.
+     Unofficial fan-made page — the archive is the source of truth.</p>
 </footer>
 </div>
 
@@ -126,8 +133,8 @@ const fmtNum = n => n.toLocaleString('en-US');
 function cards() {
   const rows = DATA.rows[fmt];
   const evs = DATA.events.filter(e => e.format === fmt);
-  const players = new Set(rows.map(r => r[1])).size;
-  const racks = rows.reduce((a, r) => a + r[0], 0);
+  const players = new Set(rows.map(r => r[2])).size;
+  const racks = rows.reduce((a, r) => a + r[1], 0);
   const label = fmt === 'singles' ? 'players' : 'teams';
   document.getElementById('th-name').textContent = fmt === 'singles' ? 'Player' : 'Team';
   document.getElementById('cards').innerHTML = [
@@ -135,20 +142,20 @@ function cards() {
     ['Results', fmtNum(rows.length)],
     ['Distinct ' + label, fmtNum(players)],
     ['Racks played', fmtNum(racks)],
-    ['Best night', rows.length ? rows[0][0] + ' racks' : '—'],
+    ['Best run', rows.length && rows[0][0] ? rows[0][0] + ' in a row' : '\u2014'],
   ].map(([k, v]) => `<div class="card"><b>${v}</b><span>${k}</span></div>`).join('');
 }
 
 function apply() {
   const t = q.value.trim().toLowerCase();
-  // rows arrive pre-sorted by racks, so row 0 is a stable scale for the bars
-  scale = DATA.rows[fmt].length ? DATA.rows[fmt][0][0] : 1;
-  view = DATA.rows[fmt].filter(r => !t || r[1].toLowerCase().includes(t) || r[3].includes(t));
+  // rows arrive pre-sorted by streak, so row 0 is a stable scale for the bars
+  scale = DATA.rows[fmt].length ? (DATA.rows[fmt][0][0] || 1) : 1;
+  view = DATA.rows[fmt].filter(r => !t || r[2].toLowerCase().includes(t) || r[4].includes(t));
   view.sort((a, b) => {
     const x = a[sortKey], y = b[sortKey];
     let c;
-    if (typeof x === 'number' || typeof y === 'number') c = (x === null ? -1 : x) - (y === null ? -1 : y);
-    else c = String(x).localeCompare(String(y));
+    if (typeof x === 'string' || typeof y === 'string') c = String(x).localeCompare(String(y));
+    else c = (x === null ? -1 : x) - (y === null ? -1 : y);
     return asc ? c : -c;
   });
   limit = PAGE;
@@ -157,13 +164,15 @@ function apply() {
 
 function render() {
   tb.innerHTML = view.slice(0, limit).map((r, i) => {
-    const w = Math.round(r[0] / scale * 46);
-    const fin = r[4] === 1 ? '<span class="gold">1st</span>' : r[4];
+    const w = Math.round((r[0] || 0) / scale * 46);
+    const fin = r[5] === 1 ? '<span class="gold">1st</span>' : r[5];
+    const run = r[0] === null ? '<span class="dash">\u2014</span>' : `<span class="racks">${r[0]}</span>`;
     return `<tr><td class="num rk">${i + 1}</td>`
-      + `<td class="num"><span class="racks">${r[0]}</span><span class="bar" style="width:${w}px"></span></td>`
-      + `<td class="name">${esc(r[1])}</td>`
-      + `<td class="num">${r[2] === null ? '—' : r[2]}</td>`
-      + `<td>${esc(r[3])}</td><td class="num">${fin}</td></tr>`;
+      + `<td class="num">${run}<span class="bar" style="width:${w}px"></span></td>`
+      + `<td class="num tot">${r[1]}</td>`
+      + `<td class="name">${esc(r[2])}</td>`
+      + `<td class="num">${r[3] === null ? '\u2014' : r[3]}</td>`
+      + `<td>${esc(r[4])}</td><td class="num">${fin}</td></tr>`;
   }).join('');
   emptyBox.hidden = view.length > 0;
   const left = view.length - limit;
@@ -185,7 +194,7 @@ document.querySelectorAll('th[data-k]').forEach(th => {
   const sort = () => {
     const k = +th.dataset.k;
     if (k === sortKey) asc = !asc;
-    else { sortKey = k; asc = (k === 1 || k === 3 || k === 4); }
+    else { sortKey = k; asc = (k === 2 || k === 4 || k === 5); }
     apply();
   };
   th.addEventListener('click', sort);

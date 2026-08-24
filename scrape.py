@@ -92,15 +92,15 @@ def parse_event(raw, filename):
     d["avg"] = []
     m = re.search(r"Average Time Per Game:.*?</p>", raw, re.S)
     if m:
-        for nm, _t, ng, _cw in re.findall(
-                r"([A-Za-z][^<]*?\(\d+\))\s+(\d+:\d+)\s+(\d+)\s+(\d*)\s*<br>", m.group(0)):
-            d["avg"].append([nm.strip(), int(ng)])
+        for nm, _t, ng, cw in re.findall(
+                r"([A-Za-z][^<>]*?\(\d+\))\s+(\d+:\d+)\s+(\d+)\s+(\d*)\s*<br>", m.group(0)):
+            d["avg"].append([nm.strip(), int(ng), int(cw) if cw else 0])
     return d
 
 
 def is_doubles(ev):
     """Scotch doubles pages list teams ("Traci T-Dennis V") with combined Fargo ratings."""
-    names = [n for n, _ in ev["fargo"]] or [re.sub(r"\s*\(\d+\)$", "", n) for n, _ in ev["avg"]]
+    names = [n for n, _ in ev["fargo"]] or [re.sub(r"\s*\(\d+\)$", "", a[0]) for a in ev["avg"]]
     if not names:
         return None
     dash = sum(1 for n in names if re.search(r"[A-Za-z]\s*-\s*[A-Za-z]", n)) / len(names)
@@ -109,14 +109,23 @@ def is_doubles(ev):
 
 
 def event_rows(ev):
-    """One row per competitor: [racks_won, name, fargo, date, finishing_place]."""
+    """One row per competitor: [streak, racks_won, name, fargo, date, place, games].
+
+    `streak` is the CW column -- the longest run of racks won back to back that
+    night. `racks_won` is the night's total.
+    """
     lut = collections.defaultdict(list)
     for full, rating in ev["fargo"]:
         lut[full[:15]].append((full, rating))
-    for full, _ng in ev["avg"]:
+    stats = {}
+    for full, ng, cw in ev["avg"]:
         mm = re.match(r"(.*?)\s*\((\d+)\)$", full)
-        if mm:
-            lut[mm.group(1).strip()[:15]].append((mm.group(1).strip(), int(mm.group(2))))
+        if not mm:
+            continue
+        nm, rating = mm.group(1).strip(), int(mm.group(2))
+        lut[nm[:15]].append((nm, rating))
+        stats[(nm, rating)] = (cw, ng)
+        stats.setdefault(nm[:15], (cw, ng))
 
     def resolve(nm):
         cands = lut.get(nm, [])
@@ -127,17 +136,27 @@ def event_rows(ev):
         best = max(fulls, key=lambda x: (fulls[x], len(x)))
         return best, (ratings.pop() if len(ratings) == 1 else None)
 
+    def look(full, rating, key):
+        # None means "no matching row in the time table" -- unknown, not zero
+        hit = stats.get((full, rating))
+        if hit is None:
+            hit = stats.get(key)
+        return hit if hit else (None, 0)
+
     rows = []
     for nm, won in ev["active"]:
         mm = re.match(r"(.*?)\s*\((\d+)\)$", nm)
-        rows.append([won, mm.group(1).strip() if mm else nm,
-                     int(mm.group(2)) if mm else None, ev["date"], 1])
+        full = mm.group(1).strip() if mm else nm
+        rating = int(mm.group(2)) if mm else None
+        cw, ng = look(full, rating, full[:15])
+        rows.append([cw, won, full, rating, ev["date"], 1, ng])
     n = len(ev["elim"])
     for i, (nm, v) in enumerate(ev["elim"]):
         if not v:
             continue  # blank = duplicate registration that never played
         full, rating = resolve(nm)
-        rows.append([int(v), full, rating, ev["date"], len(ev["active"]) + (n - i)])
+        cw, ng = look(full, rating, nm)
+        rows.append([cw, int(v), full, rating, ev["date"], len(ev["active"]) + (n - i), ng])
     return rows
 
 
@@ -222,7 +241,7 @@ def main():
                      "entrants": len(rows), "winner": ev["winner"]})
 
     for k in out:
-        out[k].sort(key=lambda r: (-r[0], r[3], r[1]))
+        out[k].sort(key=lambda r: (-(r[0] if r[0] is not None else -1), -r[1], r[4], r[2]))
 
     payload = {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
