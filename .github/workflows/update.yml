@@ -1,0 +1,38 @@
+name: Refresh tournament data
+
+on:
+  schedule:
+    # 08:00 Arizona (MST, no DST) on Saturday and Sunday — after Friday night's tournament.
+    - cron: "0 15 * * 6"
+    - cron: "0 15 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Scrape archive
+        run: python scrape.py
+
+      # data.json always changes because it carries a "last checked" timestamp,
+      # which is what the page shows to prove it is still live.
+      - name: Commit and publish
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data.json cache/events.json
+          git commit -m "Refresh tournament data ($(date -u +%Y-%m-%d))" || exit 0
+          git push

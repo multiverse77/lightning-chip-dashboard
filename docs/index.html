@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Natalie's Chip Tournament — Rack Leaderboard</title>
+<meta name="description" content="All-time racks-won leaderboard for Natalie's nine-ball chip tournaments in Arizona.">
+<style>
+:root{
+  --bg:#0e1512; --panel:#16201c; --panel2:#1c2823; --line:#2a3a33;
+  --fg:#e6efea; --dim:#8fa79c; --accent:#3ecf8e; --accent2:#e5b45b; --bar:#2f7d5c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:1000px;margin:0 auto;padding:22px 16px 60px}
+header h1{margin:0;font-size:24px;letter-spacing:-.01em}
+header p{margin:6px 0 0;color:var(--dim);font-size:13px;line-height:1.5}
+.updated{color:var(--dim);font-size:12px;margin-top:8px}
+.updated b{color:var(--accent)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:20px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.card b{display:block;font-size:21px;line-height:1.15;font-variant-numeric:tabular-nums}
+.card span{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+.seg button{background:none;border:0;color:var(--dim);font:inherit;font-size:13px;font-weight:600;
+  padding:7px 15px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--bar);color:#fff}
+#q{flex:1;min-width:180px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);
+  background:var(--panel);color:inherit;font:inherit;font-size:14px}
+#q::placeholder{color:var(--dim)}
+
+.tablebox{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px}
+th{background:var(--panel2);text-align:left;padding:10px 11px;font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.05em;color:var(--dim);white-space:nowrap;
+  border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+th:hover{color:var(--fg)}
+th .ar{opacity:.5;font-size:9px}
+td{padding:9px 11px;border-bottom:1px solid rgba(42,58,51,.55);font-size:14px;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.rk{color:var(--dim);font-size:12px}
+.racks{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.bar{display:inline-block;height:7px;border-radius:3px;background:var(--bar);vertical-align:middle;margin-left:7px}
+.name{font-weight:500}
+.gold{color:var(--accent2);font-weight:700}
+.empty{padding:34px;text-align:center;color:var(--dim);font-size:14px}
+#more{display:block;width:100%;padding:12px;background:var(--panel2);border:0;border-top:1px solid var(--line);
+  color:var(--accent);font:inherit;font-weight:600;font-size:13px;cursor:pointer}
+#more:hover{background:#22302a}
+footer{margin-top:22px;color:var(--dim);font-size:12px;line-height:1.65}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline}
+@media(max-width:520px){
+  .wrap{padding:16px 11px 50px} header h1{font-size:20px}
+  td,th{padding:8px 8px;font-size:13px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Natalie's Chip Tournament — Rack Leaderboard</h1>
+  <p>Every player's racks won in a single night, ranked all-time. Nine-ball chip
+     tournaments at Natalie's, Friday nights, alternating singles and Scotch doubles.</p>
+  <div class="updated" id="updated">Loading…</div>
+</header>
+
+<div class="cards" id="cards"></div>
+
+<div class="controls">
+  <div class="seg" role="group" aria-label="Tournament format">
+    <button id="btn-singles" data-fmt="singles" aria-pressed="true">Singles</button>
+    <button id="btn-doubles" data-fmt="doubles" aria-pressed="false">Scotch Doubles</button>
+  </div>
+  <input id="q" type="search" placeholder="Search a player or a date…" aria-label="Search by player or date">
+</div>
+
+<div class="tablebox">
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th class="num">#</th>
+        <th class="num" data-k="0" tabindex="0">Racks</th>
+        <th data-k="1" tabindex="0" id="th-name">Player</th>
+        <th class="num" data-k="2" tabindex="0">Fargo</th>
+        <th data-k="3" tabindex="0">Date</th>
+        <th class="num" data-k="4" tabindex="0">Finish</th>
+      </tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+  <div class="empty" id="empty" hidden>No results — try another name.</div>
+  <button id="more" hidden></button>
+</div>
+
+<footer>
+  <p>Racks = games won by that player across the whole night. Because races are
+     handicapped on Fargo rating, a big rack count doesn't always mean a deep finish —
+     a strong player often has to win far more games to survive the same number of chips.
+     <b>Finish</b> is placing in that event; <span class="gold">1st</span> won it.</p>
+  <p>Data scraped from Martin Colello's
+     <a href="https://lightningchip.xyz/results/Archive/" target="_blank" rel="noopener">Lightning Chip archive</a>.
+     Refreshes automatically every weekend. Unofficial fan-made page — the archive is the source of truth.</p>
+</footer>
+</div>
+
+<script>
+const PAGE = 200;
+let DATA = null, fmt = 'singles', sortKey = 0, asc = false, limit = PAGE, view = [], scale = 1;
+
+const tb = document.getElementById('tb');
+const q = document.getElementById('q');
+const moreBtn = document.getElementById('more');
+const emptyBox = document.getElementById('empty');
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtNum = n => n.toLocaleString('en-US');
+
+function cards() {
+  const rows = DATA.rows[fmt];
+  const evs = DATA.events.filter(e => e.format === fmt);
+  const players = new Set(rows.map(r => r[1])).size;
+  const racks = rows.reduce((a, r) => a + r[0], 0);
+  const label = fmt === 'singles' ? 'players' : 'teams';
+  document.getElementById('th-name').textContent = fmt === 'singles' ? 'Player' : 'Team';
+  document.getElementById('cards').innerHTML = [
+    ['Events', fmtNum(evs.length)],
+    ['Results', fmtNum(rows.length)],
+    ['Distinct ' + label, fmtNum(players)],
+    ['Racks played', fmtNum(racks)],
+    ['Best night', rows.length ? rows[0][0] + ' racks' : '—'],
+  ].map(([k, v]) => `<div class="card"><b>${v}</b><span>${k}</span></div>`).join('');
+}
+
+function apply() {
+  const t = q.value.trim().toLowerCase();
+  // rows arrive pre-sorted by racks, so row 0 is a stable scale for the bars
+  scale = DATA.rows[fmt].length ? DATA.rows[fmt][0][0] : 1;
+  view = DATA.rows[fmt].filter(r => !t || r[1].toLowerCase().includes(t) || r[3].includes(t));
+  view.sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    let c;
+    if (typeof x === 'number' || typeof y === 'number') c = (x === null ? -1 : x) - (y === null ? -1 : y);
+    else c = String(x).localeCompare(String(y));
+    return asc ? c : -c;
+  });
+  limit = PAGE;
+  render();
+}
+
+function render() {
+  tb.innerHTML = view.slice(0, limit).map((r, i) => {
+    const w = Math.round(r[0] / scale * 46);
+    const fin = r[4] === 1 ? '<span class="gold">1st</span>' : r[4];
+    return `<tr><td class="num rk">${i + 1}</td>`
+      + `<td class="num"><span class="racks">${r[0]}</span><span class="bar" style="width:${w}px"></span></td>`
+      + `<td class="name">${esc(r[1])}</td>`
+      + `<td class="num">${r[2] === null ? '—' : r[2]}</td>`
+      + `<td>${esc(r[3])}</td><td class="num">${fin}</td></tr>`;
+  }).join('');
+  emptyBox.hidden = view.length > 0;
+  const left = view.length - limit;
+  moreBtn.hidden = left <= 0;
+  moreBtn.textContent = left > 0 ? `Show ${Math.min(left, PAGE)} more (${fmtNum(left)} remaining)` : '';
+  document.querySelectorAll('th[data-k]').forEach(th => {
+    const on = +th.dataset.k === sortKey;
+    th.innerHTML = th.textContent.replace(/ [▲▼]$/, '') + (on ? (asc ? ' <span class="ar">▲</span>' : ' <span class="ar">▼</span>') : '');
+  });
+}
+
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+  fmt = b.dataset.fmt;
+  document.querySelectorAll('.seg button').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+  cards();
+  apply();
+}));
+document.querySelectorAll('th[data-k]').forEach(th => {
+  const sort = () => {
+    const k = +th.dataset.k;
+    if (k === sortKey) asc = !asc;
+    else { sortKey = k; asc = (k === 1 || k === 3 || k === 4); }
+    apply();
+  };
+  th.addEventListener('click', sort);
+  th.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sort(); }
+  });
+});
+q.addEventListener('input', apply);
+moreBtn.addEventListener('click', () => { limit += PAGE; render(); });
+
+fetch('data.json?' + Date.now())
+  .then(r => r.json())
+  .then(d => {
+    DATA = d;
+    const latest = d.events[0];
+    const when = new Date(d.generated_utc).toLocaleString('en-US',
+      { timeZone: 'America/Phoenix', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    document.getElementById('updated').innerHTML =
+      `Updated <b>${when}</b> AZ · latest event <b>${esc(latest.date)}</b> (${esc(latest.format)}, ${latest.entrants} entrants)`;
+    cards();
+    apply();
+  })
+  .catch(() => {
+    document.getElementById('updated').textContent = 'Could not load data.json.';
+  });
+</script>
+</body>
+</html>
