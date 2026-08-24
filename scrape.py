@@ -40,10 +40,22 @@ def fetch(url, attempts=3):
 
 
 def norm_date(s):
-    m = re.match(r"([A-Za-z]+)\s+(\d+)\s+(\d{4})", s.strip())
-    if not m:
-        return s.strip()
+    # Older pages prefix the date with a timestamp: "10:39:11 January 7 2022".
+    s = re.sub(r"^\s*\d{1,2}:\d{2}(:\d{2})?\s+", "", s.strip())
+    m = re.match(r"([A-Za-z]+)\s+(\d+)\s+(\d{4})", s)
+    if not m or m.group(1) not in MONTHS:
+        return s
     return "%04d-%02d-%02d" % (int(m.group(3)), MONTHS[m.group(1)], int(m.group(2)))
+
+
+def abs_days(a, b):
+    """Days between two YYYY-MM-DD strings; large if either is unparseable."""
+    try:
+        fa = datetime.strptime(a, "%Y-%m-%d")
+        fb = datetime.strptime(b, "%Y-%m-%d")
+    except (ValueError, TypeError):
+        return 10 ** 6
+    return abs((fa - fb).days)
 
 
 def parse_event(raw, filename):
@@ -68,6 +80,16 @@ def parse_event(raw, filename):
             mm = re.match(r"\s*(.+?\(\d+\))\s+(\d+)\s+(\d+)\s*$", t)
             if mm:
                 d["active"].append([mm.group(1).strip(), int(mm.group(2))])
+        # Pre-2023 pages truncate the survivor's name and omit the rating
+        # ("Mitch Ellerm   42  1"), so recover it via the winner heading.
+        if not d["active"] and d["winner"]:
+            stem = re.sub(r"\s*\(\d+\)$", "", d["winner"]).strip()
+            for line in seg.group(1).split("\n"):
+                t = re.sub(r"<[^>]+>", "", line).rstrip()
+                mm = re.match(r"\s*([A-Za-z][A-Za-z.'\- ]+?)\s{2,}(\d+)\s+(\d+)\s*$", t)
+                if mm and stem.startswith(mm.group(1).strip()):
+                    d["active"].append([d["winner"], int(mm.group(2))])
+                    break
 
     d["elim"] = []
     m = re.search(r"<p style=\"color:red\">(.*?)</p>", raw, re.S)
@@ -92,9 +114,15 @@ def parse_event(raw, filename):
     d["avg"] = []
     m = re.search(r"Average Time Per Game:.*?</p>", raw, re.S)
     if m:
+        # The CW (consecutive wins) column only exists from late 2022 onward.
+        # Older pages end at "Number of Games Played"; recording 0 there would
+        # invent a streak of zero for players whose streak was never measured.
+        head = re.search(r"Player Name.*?<br>", m.group(0), re.S)
+        has_cw = bool(head) and "CW" in re.sub(r"<[^>]+>", "", head.group(0))
         for nm, _t, ng, cw in re.findall(
                 r"([A-Za-z][^<>]*?\(\d+\))\s+(\d+:\d+)\s+(\d+)\s+(\d*)\s*<br>", m.group(0)):
-            d["avg"].append([nm.strip(), int(ng), int(cw) if cw else 0])
+            streak = (int(cw) if cw else 0) if has_cw else None
+            d["avg"].append([nm.strip(), int(ng), streak])
     return d
 
 
@@ -181,6 +209,11 @@ def load_cache():
     return {}
 
 
+# The Friday night series ran at Skip & Jan's until 2023-11-25 and moved to
+# Natalie's from 2023-12-02. Same event, same tournament director, renamed venue.
+VENUES = ("natalie", "skip")
+
+
 def main():
     print("fetching archive index ...")
     index = fetch(BASE + "index.html")
@@ -188,10 +221,10 @@ def main():
 
     wanted, seen = [], set()
     for url, _label in listed:
-        if "natalie" in url.lower() and url not in seen:
+        if any(v in url.lower() for v in VENUES) and url not in seen:
             seen.add(url)
             wanted.append(url)
-    print("  %d archive entries, %d for Natalie's" % (len(listed), len(wanted)))
+    print("  %d archive entries, %d for the Friday night series" % (len(listed), len(wanted)))
 
     cache = load_cache()
     stale = set(wanted[:ALWAYS_REFRESH])
@@ -232,10 +265,16 @@ def main():
 
     # Drop demo runs, then collapse pages that archive the same night twice.
     events = [ev for u, ev in cache.items() if "demo" not in u.lower()]
+    # Collapse pages that archive the same night twice. Signatures are only
+    # comparable within a few days -- an empty elimination list would otherwise
+    # merge unrelated events years apart.
     by_sig = {}
-    for ev in events:
+    for ev in sorted(events, key=lambda e: str(e["date"])):
         sig = (ev["winner"], json.dumps(ev["elim"]))
         prev = by_sig.get(sig)
+        if prev is not None and abs_days(prev["date"], ev["date"]) > 3:
+            sig = (sig, ev["date"])
+            prev = by_sig.get(sig)
         if prev is None or (len(ev["avg"]), ev["date"]) > (len(prev["avg"]), prev["date"]):
             by_sig[sig] = ev
     events = sorted(by_sig.values(), key=lambda e: e["date"], reverse=True)

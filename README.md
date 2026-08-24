@@ -1,7 +1,8 @@
 # Natalie's Chip Tournament — Beast Mode Leaderboard
 
 An auto-updating leaderboard of the longest back-to-back rack runs per player per night
-at Natalie's nine-ball chip tournaments, scraped from Martin Colello's
+at the Friday night nine-ball chip tournaments -- Natalie's today, Skip & Jan's before
+December 2023 -- scraped from Martin Colello's
 [Lightning Chip archive](https://lightningchip.xyz/results/Archive/).
 
 **Live page:** <https://multiverse77.github.io/lightning-chip-dashboard/>
@@ -92,6 +93,14 @@ These come from the source archive and are deliberately left alone:
   the streak and marked with an asterisk. Nothing else is altered.
 - Rows whose name can't be matched to exactly one entry in the time table show a dash
   rather than a guessed value. A genuine zero (player won nothing) renders as 0.
+- The archive's CW column only appears from late 2022. Earlier pages end at "Number of
+  Games Played", so their streaks are unknown (dash), not zero. Rack totals still count.
+- 24 pages from Jan-Jul 2022 use an older multi-column layout whose fixed-width cells
+  parse into garbage ("Bret H Priscilla" / "H ("). They are skipped rather than guessed
+  at. They predate the CW column, so they could not contribute a streak regardless.
+- Beware Lyle Wilson's widely-shared 2023 spreadsheet: its "Cons. Wins" column mixes
+  real CW values with the plain Won column for nights that predate CW. Mitch Ellerman's
+  42 is a rack total from a 45-game night he lost 3 of -- not a 42-rack streak.
 
 ## Being a good neighbour
 
