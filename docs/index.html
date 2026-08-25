@@ -66,6 +66,7 @@ footer{margin-top:22px;color:var(--dim);font-size:12px;line-height:1.65}
 footer .by{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px}
 footer a{color:var(--accent);text-decoration:none}
 footer a:hover{text-decoration:underline}
+#views:not(:empty){margin-left:8px;padding-left:8px;border-left:1px solid var(--line);color:var(--dim);white-space:nowrap}
 @media(max-width:520px){
   .wrap{padding:16px 11px 50px} header h1{font-size:20px}
   td,th{padding:8px 8px;font-size:13px}
@@ -130,7 +131,7 @@ footer a:hover{text-decoration:underline}
      listed fewer total wins than the streak itself — impossible, so the total was
      raised to match. Unofficial fan-made page — the archive is the source of truth.</p>
   <p class="by">Built and maintained by <b>Sandeep Sharma</b>.
-     Spot something wrong? Let me know and I'll fix it.</p>
+     Spot something wrong? Let me know and I'll fix it.<span id="views"></span></p>
 </footer>
 </div>
 
@@ -238,6 +239,19 @@ fetch('data.json?' + Date.now())
   .catch(() => {
     document.getElementById('updated').textContent = 'Could not load data.json.';
   });
+
+// Rendered inline rather than via goatcounter.visit_count(), whose widget is a
+// fixed 200x80 block. Stays empty if the counter is disabled or blocked.
+if (typeof fetch === 'function') {
+  fetch('https://multiverse.goatcounter.com/counter/TOTAL.json')
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if (d && d.count) {
+        document.getElementById('views').textContent = `${d.count} visits`;
+      }
+    })
+    .catch(() => {});
+}
 </script>
 <script data-goatcounter="https://multiverse.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>

@@ -121,5 +121,11 @@ with the referrer, browser, screen size and country. No cookies, no identifiers,
 nothing that singles out a visitor, so no consent banner is needed. It cannot tell you
 *who* looked at the page, only how many did. Counts are private to the account owner.
 
+The footer shows a total visit count, read from `counter/TOTAL.json` and rendered
+inline so it matches the page style. This needs "Allow adding visitor counts on your
+website" enabled in the GoatCounter site settings; until then the endpoint returns 403
+and the footer simply shows nothing. Counts are cached by GoatCounter for up to four
+hours, so a fresh visit will not appear immediately.
+
 Removing it is one line in `docs/index.html` -- the dashboard behaves identically
 without it, and the script fails silently if a visitor blocks it.
