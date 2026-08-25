@@ -113,3 +113,13 @@ The scraper identifies itself, retries with backoff, uses four workers with a sm
 delay, and caches so it isn't re-downloading the whole archive. If you want it to run
 more often, cache harder rather than raising the worker count. It's worth telling
 Martin the page exists — he built the tournament software this all comes from.
+
+## Analytics
+
+The page loads GoatCounter (`multiverse.goatcounter.com`), which records a pageview
+with the referrer, browser, screen size and country. No cookies, no identifiers,
+nothing that singles out a visitor, so no consent banner is needed. It cannot tell you
+*who* looked at the page, only how many did. Counts are private to the account owner.
+
+Removing it is one line in `docs/index.html` -- the dashboard behaves identically
+without it, and the script fails silently if a visitor blocks it.
