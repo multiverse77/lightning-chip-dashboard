@@ -7,6 +7,9 @@ December 2023 -- scraped from Martin Colello's
 
 **Live page:** <https://multiverse77.github.io/lightning-chip-dashboard/>
 
+**For players:** [How it works](HOW-IT-WORKS.md) — plain-English explanation of where the
+numbers come from, with notes on the tournament software behind them.
+
 ## One-time setup
 
 ```bash
